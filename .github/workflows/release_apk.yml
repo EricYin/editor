@@ -74,3 +74,5 @@ jobs:
           tag: ${{ steps.release_data.outputs.tag }}
           files: build/outputs/apk/release/editor-release-signed.apk
           generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
