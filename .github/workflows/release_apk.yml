@@ -1,70 +1,73 @@
 name: Release APK
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-	build:
-		name: Build release APK
-		runs-on: ubuntu-latest
-		timeout-minutes: 30
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
-		steps:
-			- name: Checkout
-				uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-			- name: Set up Java
-				uses: actions/setup-java@v4
-				with:
-					distribution: temurin
-					java-version: '17'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-			- name: Set up Android SDK
-				uses: android-actions/setup-android@v3
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-			- name: Install Android SDK platform
-				run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-			- name: Set up Gradle
-				uses: gradle/actions/setup-gradle@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-			- name: Build release APK
-				run: ./gradlew --no-daemon clean assembleRelease
+      - name: Build release APK
+        run: ./gradlew --no-daemon clean assembleRelease
 
-			- name: Sign release APK
-				env:
-					KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-					KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-					KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-					KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-				run: |
-					set -euo pipefail
-					unsigned_apk="$(find build/outputs/apk/release -name '*-unsigned.apk' -print -quit)"
-					test -n "$unsigned_apk"
-					keystore="$RUNNER_TEMP/release.keystore"
-					trap 'rm -f "$keystore"' EXIT
-					printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
-					apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
-					"$apksigner" sign \
-						--ks "$keystore" \
-						--ks-key-alias "$KEY_ALIAS" \
-						--ks-pass env:KEYSTORE_PASSWORD \
-						--key-pass env:KEY_PASSWORD \
-						--out build/outputs/apk/release/editor-release-signed.apk \
-						"$unsigned_apk"
-					"$apksigner" verify --verbose build/outputs/apk/release/editor-release-signed.apk
+      - name: Sign release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          unsigned_apk="$(find build/outputs/apk/release -name '*-unsigned.apk' -print -quit)"
+          test -n "$unsigned_apk"
+          keystore="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$keystore"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
+          "$apksigner" sign \
+            --ks "$keystore" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out build/outputs/apk/release/editor-release-signed.apk \
+            "$unsigned_apk"
+          "$apksigner" verify --verbose build/outputs/apk/release/editor-release-signed.apk
 
-			- name: Upload release APK
-				uses: actions/upload-artifact@v4
-				with:
-					name: editor-release-${{ github.run_number }}
-					path: build/outputs/apk/release/editor-release-signed.apk
-					if-no-files-found: error
-					retention-days: 14
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-release-${{ github.run_number }}
+          path: build/outputs/apk/release/editor-release-signed.apk
+          if-no-files-found: error
+          retention-days: 14
