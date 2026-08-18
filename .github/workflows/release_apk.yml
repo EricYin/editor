@@ -63,11 +63,14 @@ jobs:
 
       - name: Generate release data
         id: release_data
-        run: echo "name=editor_$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"         
+        run: |
+          echo "name=editor_$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"      
+          echo "tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT           
 
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.release_data.outputs.name }}
+          tag: ${{ steps.release_data.outputs.tag }}
           files: build/outputs/apk/release/editor-release-signed.apk
           generate_release_notes: true
