@@ -585,8 +585,9 @@ public class Editor extends Activity
                 }
             });
 
-            newFile();
-            return;
+            //eric change
+            //newFile();
+            //return;
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
@@ -609,9 +610,10 @@ public class Editor extends Activity
                     break;
                 }
             });
-
-            newFile();
-            return;
+            
+            //eric change
+            //newFile();
+            //return;
         }
 
         Intent intent = getIntent();
