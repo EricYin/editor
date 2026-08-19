@@ -39,6 +39,14 @@ jobs:
       - name: Build release APK
         run: ./gradlew --no-daemon clean assembleRelease
 
+      - name: Generate release data
+        id: release_data
+        run: |
+          timestamp="$(date -u +%Y%m%d%H%M)"
+          echo "name=editor_$timestamp" >> "$GITHUB_OUTPUT"
+          echo "tag=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "apk_path=build/outputs/apk/release/signed_editor_$timestamp.apk" >> "$GITHUB_OUTPUT"
+
       - name: Sign release APK
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -58,16 +66,9 @@ jobs:
             --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASSWORD \
             --key-pass env:KEY_PASSWORD \
-            --out build/outputs/apk/release/editor-release-signed.apk \
+            --out ${{ steps.release_data.outputs.apk_path }} \
             "$unsigned_apk"
-          "$apksigner" verify --verbose build/outputs/apk/release/editor-release-signed.apk
-
-      - name: Generate release data
-        id: release_data
-        run: |
-          timestamp="$(date -u +%Y%m%d%H%M)"
-          echo "name=editor_$timestamp" >> "$GITHUB_OUTPUT"
-          echo "tag=$timestamp" >> "$GITHUB_OUTPUT"
+          "$apksigner" verify --verbose ${{ steps.release_data.outputs.apk_path }}
 
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -75,7 +76,7 @@ jobs:
           name: ${{ steps.release_data.outputs.name }}
           tag_name: ${{ steps.release_data.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          files: build/outputs/apk/release/editor-release-signed.apk
+          files: ${{ steps.release_data.outputs.apk_path }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
