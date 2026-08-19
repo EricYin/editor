@@ -563,7 +563,8 @@ public class Editor extends Activity
 
         setListeners();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+        //eric change
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
             !Environment.isExternalStorageManager())
         {
             alertDialog(this, R.string.access, R.string.manageFiles,
@@ -584,10 +585,9 @@ public class Editor extends Activity
                     break;
                 }
             });
-
-            //eric change
-            //newFile();
-            //return;
+            
+            newFile();
+            return; 
         }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
@@ -611,10 +611,9 @@ public class Editor extends Activity
                 }
             });
             
-            //eric change
-            //newFile();
-            //return;
-        }
+            newFile();
+            return;
+        }*/
 
         Intent intent = getIntent();
         Uri uri = intent.getData();
